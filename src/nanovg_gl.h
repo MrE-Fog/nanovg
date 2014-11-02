@@ -632,7 +632,7 @@ static int glnvg__renderCreateTexture(void* uptr, int type, int w, int h, int im
 
 #ifdef NANOVG_GLES2
 	// Check for non-power of 2.
-	if (glnvg__nearestPow2(w) != (unsigned int)w || glnvg__nearestPow2(h) == (unsigned int)h) {
+	if (glnvg__nearestPow2(w) != (unsigned int)w || glnvg__nearestPow2(h) != (unsigned int)h) {
 		// No repeat
 		if ((imageFlags & NVG_IMAGE_REPEATX) != 0 || (imageFlags & NVG_IMAGE_REPEATY) != 0) {
 			printf("Repeat X/Y is not supported for non power-of-two textures (%d x %d)\n", w, h);
@@ -1003,6 +1003,14 @@ static void glnvg__triangles(GLNVGcontext* gl, GLNVGcall* call)
 	glnvg__checkError(gl, "triangles fill");
 
 	glDrawArrays(GL_TRIANGLES, call->triangleOffset, call->triangleCount);
+}
+
+static void glnvg__renderCancel(void* uptr) {
+	GLNVGcontext* gl = (GLNVGcontext*)uptr;
+	gl->nverts = 0;
+	gl->npaths = 0;
+	gl->ncalls = 0;
+	gl->nuniforms = 0;
 }
 
 static void glnvg__renderFlush(void* uptr)
@@ -1397,6 +1405,7 @@ NVGcontext* nvgCreateGLES3(int flags)
 	params.renderUpdateTexture = glnvg__renderUpdateTexture;
 	params.renderGetTextureSize = glnvg__renderGetTextureSize;
 	params.renderViewport = glnvg__renderViewport;
+	params.renderCancel = glnvg__renderCancel;
 	params.renderFlush = glnvg__renderFlush;
 	params.renderFill = glnvg__renderFill;
 	params.renderStroke = glnvg__renderStroke;
@@ -1418,13 +1427,13 @@ error:
 	return NULL;
 }
 
-#if NANOVG_GL2
+#if defined NANOVG_GL2
 void nvgDeleteGL2(NVGcontext* ctx)
-#elif NANOVG_GL3
+#elif defined NANOVG_GL3
 void nvgDeleteGL3(NVGcontext* ctx)
-#elif NANOVG_GLES2
+#elif defined NANOVG_GLES2
 void nvgDeleteGLES2(NVGcontext* ctx)
-#elif NANOVG_GLES3
+#elif defined NANOVG_GLES3
 void nvgDeleteGLES3(NVGcontext* ctx)
 #endif
 {
